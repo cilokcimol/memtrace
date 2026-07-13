@@ -13,8 +13,9 @@ const KEYS = [
 ].filter(Boolean) as string[];
 
 const MODELS = [
-  "gemini-3.5-flash",
+  "gemini-2.0-flash",
   "gemini-2.5-flash",
+  "gemini-1.5-flash",
 ];
 
 const SYSTEM_PROMPT = `You are MemTrace AI Agent — an elite developer debugging assistant with permanent, cross-session memory powered by Walrus Mainnet decentralised storage. Every insight, bug, fix, and architectural decision you help uncover is stored on-chain and recalled automatically in future sessions. You do not suffer from context amnesia. You compound knowledge.
@@ -152,7 +153,17 @@ Every session should end with the user knowing more about their own project than
 
 function isQuota(e: unknown): boolean {
   const s = String((e as Error)?.message ?? e);
-  return s.includes("429") || s.includes("quota") || s.includes("RESOURCE_EXHAUSTED") || (e as { status?: number })?.status === 429;
+  const status = (e as { status?: number })?.status;
+  return (
+    s.includes("429") ||
+    s.includes("quota") ||
+    s.includes("RESOURCE_EXHAUSTED") ||
+    s.includes("not found") ||
+    s.includes("404") ||
+    s.includes("invalid") ||
+    status === 429 ||
+    status === 404
+  );
 }
 
 async function callGemini(systemInstruction: string, history: Array<{ role: string; parts: Array<{ text: string }> }>, userMessage: string): Promise<string> {
