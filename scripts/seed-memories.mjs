@@ -1,8 +1,27 @@
 import { MemWal } from "@mysten-incubation/memwal";
+import { config } from "dotenv";
+import { readFileSync } from "fs";
+import { resolve } from "path";
 
-const PRIVATE_KEY = "596d6d19e4043a9c5061015ed264bae8be2cf6506420cdbdd8c25661b9d0fcd9";
-const ACCOUNT_ID = "0xbad2a5a0114e936bdf40ff1ffb3b0ee48621ca3a32708d8bbae783547e8df983";
-const SERVER_URL = "https://relayer.memory.walrus.xyz";
+const envPath = resolve(process.cwd(), ".env.local");
+try {
+  const raw = readFileSync(envPath, "utf-8");
+  raw.split("\n").forEach(line => {
+    const [k, ...v] = line.split("=");
+    if (k && v.length) process.env[k.trim()] = v.join("=").trim();
+  });
+} catch {
+  /* .env.local not found, relying on shell env */
+}
+
+const PRIVATE_KEY = process.env.MEMWAL_PRIVATE_KEY;
+const ACCOUNT_ID = process.env.MEMWAL_ACCOUNT_ID;
+const SERVER_URL = process.env.MEMWAL_SERVER_URL ?? "https://relayer.memory.walrus.xyz";
+
+if (!PRIVATE_KEY || !ACCOUNT_ID) {
+  console.error("Missing MEMWAL_PRIVATE_KEY or MEMWAL_ACCOUNT_ID in .env.local");
+  process.exit(1);
+}
 
 function getMemwal(namespace) {
   return MemWal.create({ key: PRIVATE_KEY, accountId: ACCOUNT_ID, serverUrl: SERVER_URL, namespace });
@@ -36,7 +55,7 @@ const memories = {
     "[DECISION] Using Walrus Memory over Redis for agent context because decentralized, verifiable, cross-app portable | ALTERNATIVES REJECTED: Redis (single server, no portability), IndexedDB (browser only, not agent-accessible) | DATE: 2026-07-13",
     "[DECISION] Using Next.js App Router over Pages Router for MemTrace because server components improve performance | ALTERNATIVES REJECTED: Vite+React (no SSR), Pages Router (legacy, no server components) | DATE: 2026-07-13",
     "[DECISION] Namespaced memory (bugs/fixes/decisions/patterns) over single namespace because parallel recall from multiple semantic buckets improves retrieval precision | DATE: 2026-07-13",
-    "[DECISION] Multi-key Gemini rotation for chat because free tier limits are per key, rotation ensures near-zero downtime | ALTERNATIVES REJECTED: single key (quota exhausted quickly), OpenAI (paid only) | DATE: 2026-07-13",
+    "[DECISION] Multi-key AI rotation for chat because free tier limits are per key, rotation ensures near-zero downtime | ALTERNATIVES REJECTED: single key (quota exhausted quickly) | DATE: 2026-07-13",
   ],
   patterns: [
     "[PATTERN] nextjs-app tends to break at API boundaries when credentials and CORS interact | WATCH FOR: any new API route that involves cookies or auth headers | DATE: 2026-07-13",
